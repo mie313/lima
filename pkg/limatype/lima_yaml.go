@@ -81,6 +81,7 @@ const (
 	LINUX   OS = "Linux"
 	DARWIN  OS = "Darwin"
 	FREEBSD OS = "FreeBSD"
+	WINDOWS OS = "Windows"
 
 	X8664   Arch = "x86_64"
 	AARCH64 Arch = "aarch64"

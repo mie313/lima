@@ -53,8 +53,8 @@ func Prepare(ctx context.Context, inst *limatype.Instance, guestAgent string) (*
 	case limatype.DARWIN:
 		// macOS guests always need the guest agent for running fake-cloud-init
 		needsGuestAgent = true
-	case limatype.FREEBSD:
-		// guest agent is not implemented for FreeBSD yet
+	case limatype.FREEBSD, limatype.WINDOWS:
+		// guest agent is not implemented for FreeBSD and Windows yet
 		needsGuestAgent = false
 	default:
 		needsGuestAgent = !*inst.Config.Plain

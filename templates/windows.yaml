@@ -1,0 +1,15 @@
+# Please rewrite the location to your local path
+images:
+- location: "/home/mie313/Documents/test-poc-windowsVM/images/windows_server_2025.iso"
+  arch: "x86_64"
+
+os: "Windows"
+
+
+# Please ignore them at the moment.
+base:
+- template:_default/mounts
+firmware:
+  legacyBIOS: true
+video:
+  display: default
