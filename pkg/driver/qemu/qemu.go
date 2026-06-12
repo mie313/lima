@@ -665,7 +665,8 @@ func Cmdline(ctx context.Context, cfg Config) (exe string, args []string, err er
 	isoPresent := osutil.FileExists(isoPath)
 	if osutil.FileExists(diskPath) {
 		if isoPresent {
-			args = append(args, "-drive", fmt.Sprintf("file=%s,if=virtio,discard=on", diskPath))
+			// Temporary replace 'virtio' if with 'ide' if.
+			args = append(args, "-drive", fmt.Sprintf("file=%s,if=ide,discard=on", diskPath))
 		} else {
 			// bootindex=1 fixes non-deterministic boot order when extra disks are present (#4936)
 			args = append(args, "-drive", fmt.Sprintf("file=%s,if=none,discard=on,id=boot-disk", diskPath))
@@ -683,10 +684,15 @@ func Cmdline(ctx context.Context, cfg Config) (exe string, args []string, err er
 	}
 
 	// cloud-init
-	args = append(args,
-		"-drive", "id=cdrom0,if=none,format=raw,readonly=on,file="+filepath.Join(cfg.InstanceDir, filenames.CIDataISO),
-		"-device", "virtio-scsi,id=scsi0",
-		"-device", "scsi-cd,bus=scsi0.0,drive=cdrom0")
+	switch *cfg.LimaYAML.OS {
+	case limatype.WINDOWS:
+		args = append(args, "-drive", fmt.Sprintf("file=%s,format=raw,media=cdrom,readonly=on", filepath.Join(cfg.InstanceDir, filenames.CIDataISO)))
+	default:
+		args = append(args,
+			"-drive", "id=cdrom0,if=none,format=raw,readonly=on,file="+filepath.Join(cfg.InstanceDir, filenames.CIDataISO),
+			"-device", "virtio-scsi,id=scsi0",
+			"-device", "scsi-cd,bus=scsi0.0,drive=cdrom0")
+	}
 
 	// Kernel
 	kernel := filepath.Join(cfg.InstanceDir, filenames.Kernel)

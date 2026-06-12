@@ -182,12 +182,21 @@ func New(ctx context.Context, instName string, stdout io.Writer, signalCh chan o
 		rosettaBinFmt = false
 	}
 
-	if err := cidata.GenerateCloudConfig(ctx, inst.Dir, instName, inst.Config); err != nil {
-		return nil, err
-	}
-	iid, err := cidata.GenerateISO9660(ctx, limaDriver, inst.Dir, instName, inst.Config, udpDNSLocalPort, tcpDNSLocalPort, o.guestAgentBinary, o.nerdctlArchive, vSockPort, virtioPort, noCloudInit, rosettaEnabled, rosettaBinFmt)
-	if err != nil {
-		return nil, err
+	var iid string
+	switch *inst.Config.OS {
+	case limatype.WINDOWS:
+		iid, err = cidata.GenerateWindowsISO(ctx, limaDriver, inst.Dir, instName, inst.Config, udpDNSLocalPort, tcpDNSLocalPort, o.guestAgentBinary, o.nerdctlArchive, vSockPort, virtioPort, noCloudInit, rosettaEnabled, rosettaBinFmt)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		if err := cidata.GenerateCloudConfig(ctx, inst.Dir, instName, inst.Config); err != nil {
+			return nil, err
+		}
+		iid, err = cidata.GenerateISO9660(ctx, limaDriver, inst.Dir, instName, inst.Config, udpDNSLocalPort, tcpDNSLocalPort, o.guestAgentBinary, o.nerdctlArchive, vSockPort, virtioPort, noCloudInit, rosettaEnabled, rosettaBinFmt)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	sshExe, err := sshutil.NewSSHExe()

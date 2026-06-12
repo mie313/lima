@@ -22,6 +22,16 @@ var templateFS embed.FS
 
 const templateFSRoot = "cidata.TEMPLATE.d"
 
+//go:embed win_amd64_cidata.TEMPLATE.d
+var windowsAmd64TemplateFS embed.FS
+
+const windowsAmd64TemplateFSRoot = "win_amd64_cidata.TEMPLATE.d"
+
+//go:embed win_arm64_cidata.TEMPLATE.d
+var windowsArm64TemplateFS embed.FS
+
+const windowsArm64TemplateFSRoot = "win_arm64_cidata.TEMPLATE.d"
+
 type CACerts struct {
 	RemoveDefaults *bool
 	Trusted        []Cert
@@ -201,6 +211,56 @@ func ExecuteTemplateCIDataISO(args *TemplateArgs) ([]iso9660util.Entry, error) {
 
 	if err := fs.WalkDir(fsys, ".", walkFn); err != nil {
 		return nil, err
+	}
+
+	return layout, nil
+}
+
+func ExecuteTemplateWindowsISO(args *TemplateArgs, arch limatype.Arch) ([]iso9660util.Entry, error) {
+	var fs embed.FS
+	var root string
+	switch arch {
+	case limatype.X8664: //amd64
+		fs = windowsAmd64TemplateFS
+		root = windowsAmd64TemplateFSRoot
+	case limatype.AARCH64: //arm64
+		fs = windowsArm64TemplateFS
+		root = windowsArm64TemplateFSRoot
+	default:
+		return nil, fmt.Errorf("Windows architecture %#q is not supported.", arch)
+	}
+
+	// Execute template for autounattend.xml
+	xmlTemplate, err := fs.ReadFile(path.Join(root, "autounattend.xml"))
+	if err != nil {
+		return nil, err
+	}
+
+	xmlfile, err := textutil.ExecuteTemplate(string(xmlTemplate), args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render autounattend.xml: %w", err)
+	}
+
+	// Execute template for powershell script file
+	ps1Template, err := fs.ReadFile(path.Join(root, "first_logon.ps1"))
+	if err != nil {
+		return nil, err
+	}
+
+	ps1file, err := textutil.ExecuteTemplate(string(ps1Template), args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render ps1 file: %w", err)
+	}
+
+	layout := []iso9660util.Entry{
+		{
+			Path:   "autounattend.xml",
+			Reader: bytes.NewReader(xmlfile),
+		},
+		{
+			Path:   "first_logon.ps1",
+			Reader: bytes.NewReader(ps1file),
+		},
 	}
 
 	return layout, nil
