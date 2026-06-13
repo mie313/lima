@@ -16,7 +16,7 @@ New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -DisplayName 'OpenSSH Server (
 
 # Set a public key. Since a user `lima` is in Administrators group,
 # The pubelic key should be located under C:\ProgramData\ssh instead of under C:\Users\lima\.ssh.
-$pubkey = Get-Content -Path E:\ssh_authorized_keys
+$pubkey = Get-Content -Path F:\ssh_authorized_keys
 $pubkeyLocation = 'C:\ProgramData\ssh\administrators_authorized_keys'
 Add-Content -Force -Path $pubkeyLocation -Value $pubkey
 icacls $pubkeyLocation /inheritance:r

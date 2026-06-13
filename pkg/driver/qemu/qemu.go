@@ -665,8 +665,7 @@ func Cmdline(ctx context.Context, cfg Config) (exe string, args []string, err er
 	isoPresent := osutil.FileExists(isoPath)
 	if osutil.FileExists(diskPath) {
 		if isoPresent {
-			// Temporary replace 'virtio' if with 'ide' if.
-			args = append(args, "-drive", fmt.Sprintf("file=%s,if=ide,discard=on", diskPath))
+			args = append(args, "-drive", fmt.Sprintf("file=%s,if=virtio,discard=on", diskPath))
 		} else {
 			// bootindex=1 fixes non-deterministic boot order when extra disks are present (#4936)
 			args = append(args, "-drive", fmt.Sprintf("file=%s,if=none,discard=on,id=boot-disk", diskPath))
@@ -679,6 +678,13 @@ func Cmdline(ctx context.Context, cfg Config) (exe string, args []string, err er
 	} else {
 		args = appendArgsIfNoConflict(args, "-boot", "order=c,splash-time=0,menu=on")
 	}
+
+	// virtio-win must be mounted before cidata.iso otherwise
+	// autounattend.xml can't find virtio drivers.
+	if *cfg.LimaYAML.OS == limatype.WINDOWS && cfg.LimaYAML.VirtioWin != nil {
+		args = append(args, "-drive", fmt.Sprintf("file=%s,format=raw,media=cdrom,readonly=on", filepath.Join(cfg.InstanceDir, filenames.VirtioWin)))
+	}
+
 	for _, extraDisk := range extraDisks {
 		args = append(args, "-drive", fmt.Sprintf("file=%s,if=virtio,discard=on", extraDisk))
 	}

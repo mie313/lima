@@ -127,6 +127,13 @@ func Prepare(ctx context.Context, inst *limatype.Instance, guestAgent string) (*
 		}
 	}
 
+	if *inst.Config.OS == limatype.WINDOWS && inst.Config.VirtioWin != nil {
+		virtioWin := filepath.Join(inst.Dir, filenames.VirtioWin)
+		if _, err := fileutils.DownloadFile(ctx, virtioWin, *inst.Config.VirtioWin, false, "virtio-win", *inst.Config.Arch); err != nil {
+			return nil, err
+		}
+	}
+
 	if err := limaDriver.CreateDisk(ctx); err != nil {
 		return nil, err
 	}

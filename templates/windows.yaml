@@ -5,6 +5,10 @@ images:
 
 os: "Windows"
 
+virtioWin: 
+  location: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.271-1/virtio-win-0.1.271.iso
+  arch: "x86_64"
+
 
 # Please ignore them at the moment.
 base:
