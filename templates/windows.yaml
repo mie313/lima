@@ -1,6 +1,6 @@
 # Please rewrite the location to your local path
 images:
-- location: "/home/mie313/Documents/test-poc-windowsVM/images/windows_server_2025.iso"
+- location: "https://aka.ms/WinServ2025iso-enus"
   arch: "x86_64"
 
 os: "Windows"
