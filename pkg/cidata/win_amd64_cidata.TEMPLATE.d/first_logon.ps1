@@ -3,6 +3,19 @@ $logfile = "C:\Users\{{.User}}\lima-setup.log"
 # Record logs
 Start-Transcript -Path $logfile -Append
 
+# We need to change password because the current password is specified in autounattend.xml, so all users/processes can see it.
+## Generate a random 16 character password.
+$chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+$newPassword = -join ((1..16) | ForEach-Object { $chars[(Get-Random -Maximum $chars.Length)] })
+
+## Store the password under the user directory so that user can know/change it.
+$newPassword | Out-File -FilePath "C:\Users\{{.User}}\password.txt" -Encoding utf8 -NoNewline
+
+## Change the password
+$username = $env:USERNAME
+$newSecurePassword = ConvertTo-SecureString $newPassword -AsPlainText -Force
+Set-LocalUser -Name $username -Password $newSecurePassword
+
 # Install OpenSSH server, then enable it
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 Start-Service sshd
