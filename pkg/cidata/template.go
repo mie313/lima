@@ -22,15 +22,10 @@ var templateFS embed.FS
 
 const templateFSRoot = "cidata.TEMPLATE.d"
 
-//go:embed win_amd64_cidata.TEMPLATE.d
-var windowsAmd64TemplateFS embed.FS
+//go:embed win_cidata.TEMPLATE.d
+var windowsTemplateFS embed.FS
 
-const windowsAmd64TemplateFSRoot = "win_amd64_cidata.TEMPLATE.d"
-
-//go:embed win_arm64_cidata.TEMPLATE.d
-var windowsArm64TemplateFS embed.FS
-
-const windowsArm64TemplateFSRoot = "win_arm64_cidata.TEMPLATE.d"
+const windowsTemplateFSRoot = "win_cidata.TEMPLATE.d"
 
 type CACerts struct {
 	RemoveDefaults *bool
@@ -217,18 +212,8 @@ func ExecuteTemplateCIDataISO(args *TemplateArgs) ([]iso9660util.Entry, error) {
 }
 
 func ExecuteTemplateWindowsISO(args *TemplateArgs, arch limatype.Arch) ([]iso9660util.Entry, error) {
-	var fs embed.FS
-	var root string
-	switch arch {
-	case limatype.X8664: //amd64
-		fs = windowsAmd64TemplateFS
-		root = windowsAmd64TemplateFSRoot
-	case limatype.AARCH64: //arm64
-		fs = windowsArm64TemplateFS
-		root = windowsArm64TemplateFSRoot
-	default:
-		return nil, fmt.Errorf("Windows architecture %#q is not supported.", arch)
-	}
+	fs := windowsTemplateFS
+	root := windowsTemplateFSRoot
 
 	// Execute template for autounattend.xml
 	xmlTemplate, err := fs.ReadFile(path.Join(root, "autounattend.xml"))
