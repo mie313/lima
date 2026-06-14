@@ -573,7 +573,13 @@ func (a *HostAgent) startHostAgentRoutines(ctx context.Context) error {
 		return nil
 	})
 	var errs []error
-	if err := a.waitForRequirements("essential", a.essentialRequirements()); err != nil {
+
+	essentialRequirements := a.essentialRequirements()
+	if *a.instConfig.OS == limatype.WINDOWS {
+		essentialRequirements = a.essentialWinRequirements()
+	}
+
+	if err := a.waitForRequirements("essential", essentialRequirements); err != nil {
 		errs = append(errs, err)
 	}
 	if *a.instConfig.SSH.ForwardAgent {
@@ -645,7 +651,13 @@ sudo chown -R "${USER}" /run/host-services`
 			}()
 		}
 	}
-	if err := a.waitForRequirements("optional", a.optionalRequirements()); err != nil {
+
+	optionalRequirements := a.optionalRequirements()
+	if *a.instConfig.OS == limatype.WINDOWS {
+		essentialRequirements = a.optionalWinRequirements()
+	}
+
+	if err := a.waitForRequirements("optional", optionalRequirements); err != nil {
 		errs = append(errs, err)
 	}
 	if hasGuestAgentDaemon {
@@ -657,7 +669,13 @@ sudo chown -R "${USER}" /run/host-services`
 			errs = append(errs, errors.New("guest agent does not seem to be running; port forwards will not work"))
 		}
 	}
-	if err := a.waitForRequirements("final", a.finalRequirements()); err != nil {
+
+	finalRequirements := a.finalRequirements()
+	if *a.instConfig.OS == limatype.WINDOWS {
+		finalRequirements = a.finalWinRequirements()
+	}
+
+	if err := a.waitForRequirements("final", finalRequirements); err != nil {
 		errs = append(errs, err)
 	}
 	// Copy all config files _after_ the requirements are done
