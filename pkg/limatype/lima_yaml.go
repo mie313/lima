@@ -60,6 +60,7 @@ type LimaYAML struct {
 	NestedVirtualization *bool   `yaml:"nestedVirtualization,omitempty" json:"nestedVirtualization,omitempty" jsonschema:"nullable"`
 	User                 User    `yaml:"user,omitempty" json:"user,omitempty"`
 	VirtioWin            *File   `yaml:"virtioWin,omitempty" json:"virtioWin,omitempty"`
+	TPM                  *bool   `yaml:"tpm,omitempty" json:"tpm,omitempty"`
 }
 
 type BaseTemplates []LocatorWithDigest
