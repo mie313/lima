@@ -108,7 +108,7 @@
         <LocalAccounts>
           <LocalAccount wcm:action="add">
             <Password>
-              <Value>limauser</Value>
+              <Value>{{.WindowsInitialPassword}}</Value>
               <PlainText>true</PlainText>
             </Password>
             <Description>This is limauser</Description>
@@ -138,7 +138,7 @@
         <Enabled>true</Enabled>
         <Username>{{.User}}</Username>
         <Password>
-            <Value>limauser</Value>
+            <Value>{{.WindowsInitialPassword}}</Value>
             <PlainText>true</PlainText>
         </Password>
         <LogonCount>1</LogonCount>

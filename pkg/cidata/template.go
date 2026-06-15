@@ -5,10 +5,12 @@ package cidata
 
 import (
 	"bytes"
+	"crypto/rand"
 	"embed"
 	"errors"
 	"fmt"
 	"io/fs"
+	"math/big"
 	"path"
 
 	"github.com/lima-vm/lima/v2/pkg/identifiers"
@@ -122,6 +124,22 @@ type TemplateArgs struct {
 	Plain                           bool
 	TimeZone                        string
 	NoCloudInit                     bool
+	WindowsInitialPassword          string
+}
+
+var (
+	letters               = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	windowsPasswordLength = 16
+)
+
+func (t *TemplateArgs) generateWidowsInitialPassword() {
+	p := make([]rune, windowsPasswordLength)
+	bigL := big.NewInt(int64(len(letters)))
+	for i := range windowsPasswordLength {
+		v, _ := rand.Int(rand.Reader, bigL)
+		p[i] = letters[v.Int64()]
+	}
+	t.WindowsInitialPassword = string(p)
 }
 
 func ValidateTemplateArgs(args *TemplateArgs) error {
@@ -221,6 +239,7 @@ func ExecuteTemplateWindowsISO(args *TemplateArgs) ([]iso9660util.Entry, error) 
 		return nil, err
 	}
 
+	args.generateWidowsInitialPassword()
 	xmlfile, err := textutil.ExecuteTemplate(string(xmlTemplate), args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render autounattend.xml: %w", err)

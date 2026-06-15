@@ -168,3 +168,7 @@ func TestTemplate9p(t *testing.T) {
 		}
 	}
 }
+
+func TestTemplateWindows(t *testing.T) {
+	// TODO
+}
