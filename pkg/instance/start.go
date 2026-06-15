@@ -127,10 +127,26 @@ func Prepare(ctx context.Context, inst *limatype.Instance, guestAgent string) (*
 		}
 	}
 
-	if *inst.Config.OS == limatype.WINDOWS && inst.Config.VirtioWin != nil {
-		virtioWin := filepath.Join(inst.Dir, filenames.VirtioWin)
-		if _, err := fileutils.DownloadFile(ctx, virtioWin, *inst.Config.VirtioWin, false, "virtio-win", *inst.Config.Arch); err != nil {
+	if *inst.Config.OS == limatype.WINDOWS {
+		var winOpts limatype.WindowsOpts
+		if err := limayaml.Convert(inst.Config.OsOpts[limatype.WINDOWS], &winOpts, "osOpts.Windows"); err != nil {
 			return nil, err
+		}
+
+		if len(winOpts.VirtioWin) > 0 {
+			ensuredImage := false
+			errs := make([]error, len(winOpts.VirtioWin))
+			for i, f := range winOpts.VirtioWin {
+				if _, err := fileutils.DownloadFile(ctx, imagePath, f, true, "virtio-win", *inst.Config.Arch); err != nil {
+					errs[i] = err
+					continue
+				}
+				ensuredImage = true
+				break
+			}
+			if !ensuredImage {
+				return nil, fileutils.Errors(errs)
+			}
 		}
 	}
 

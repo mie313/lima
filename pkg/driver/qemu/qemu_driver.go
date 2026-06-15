@@ -396,70 +396,18 @@ func (l *LimaQemuDriver) Start(ctx context.Context) (chan error, error) {
 		}()
 	}
 
-	// Start swtpm for TPM emulation
-	var swtpmCmd *exec.Cmd
-	if *l.Instance.Config.TPM {
-		swtpmExe, swtpmArgs, err := SwtpmCmdline(qCfg)
-		if err != nil {
+	if *l.Instance.Config.OS == limatype.WINDOWS {
+		var winOpts limatype.WindowsOpts
+		if err := limayaml.Convert(l.Instance.Config.OsOpts[limatype.WINDOWS], &winOpts, "osOpts.Windows"); err != nil {
 			return nil, err
 		}
 
-		swtpmCmd = exec.CommandContext(ctx, swtpmExe, swtpmArgs...)
-		swtpmCmd.SysProcAttr = executil.BackgroundSysProcAttr
-
-		swtpmStdout, err := swtpmCmd.StdoutPipe()
-		if err != nil {
-			return nil, err
-		}
-		go logPipeRoutine(swtpmStdout, "swtpm[stdout]")
-
-		swtpmStderr, err := swtpmCmd.StderrPipe()
-		if err != nil {
-			return nil, err
-		}
-		go logPipeRoutine(swtpmStderr, "swtpm[stdout]")
-
-		logrus.Info("Starting swtpm for TPM emulation")
-		logrus.Debugf("swtpmCmd.Args: %v", swtpmCmd.Args)
-		if err := swtpmCmd.Start(); err != nil {
-			return nil, fmt.Errorf("failed to start swtpm: %w", err)
-		}
-
-		swtpmSock := filepath.Join(l.Instance.Dir, filenames.SwtpmSock)
-		swtpmWaitCh := make(chan error, 1)
-		go func() {
-			swtpmWaitCh <- swtpmCmd.Wait()
-		}()
-
-		var swtpmSockExists bool
-		for attempt := range 5 {
-			logrus.Debugf("Waiting for swtpm socket %s (attempt %d)", swtpmSock, attempt)
-			if _, err := os.Stat(swtpmSock); err == nil {
-				swtpmSockExists = true
-				break
-			}
-			retry := time.NewTimer(200 * time.Millisecond)
-			select {
-			case err = <-swtpmWaitCh:
-				retry.Stop()
-				return nil, fmt.Errorf("swtpm exited before creating socket: %w", err)
-			case <-retry.C:
+		// Start swtpm for TPM emulation
+		if winOpts.TPM {
+			if err := l.runSwtpm(ctx, qCfg); err != nil {
+				return nil, err
 			}
 		}
-
-		if !swtpmSockExists {
-			_ = swtpmCmd.Process.Kill()
-			return nil, fmt.Errorf("swtpm socket %s never appeared", swtpmSock)
-		}
-
-		l.swtpmCmd = swtpmCmd
-		go func() {
-			if err := <-swtpmWaitCh; err != nil {
-				logrus.Errorf("swtpm exited with error: %v", err)
-			} else {
-				logrus.Info("swtpm exited cleanly")
-			}
-		}()
 	}
 
 	logrus.Infof("Starting QEMU (hint: to watch the boot progress, see %#q)", filepath.Join(qCfg.InstanceDir, "serial*.log"))
@@ -497,6 +445,73 @@ func (l *LimaQemuDriver) ChangeDisplayPassword(_ context.Context, password strin
 
 func (l *LimaQemuDriver) DisplayConnection(_ context.Context) (string, error) {
 	return l.getVNCDisplayPort()
+}
+
+func (l *LimaQemuDriver) runSwtpm(ctx context.Context, qCfg Config) error {
+	var swtpmCmd *exec.Cmd
+	swtpmExe, swtpmArgs, err := SwtpmCmdline(qCfg)
+	if err != nil {
+		return err
+	}
+
+	swtpmCmd = exec.CommandContext(ctx, swtpmExe, swtpmArgs...)
+	swtpmCmd.SysProcAttr = executil.BackgroundSysProcAttr
+
+	swtpmStdout, err := swtpmCmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	go logPipeRoutine(swtpmStdout, "swtpm[stdout]")
+
+	swtpmStderr, err := swtpmCmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	go logPipeRoutine(swtpmStderr, "swtpm[stdout]")
+
+	logrus.Info("Starting swtpm for TPM emulation")
+	logrus.Debugf("swtpmCmd.Args: %v", swtpmCmd.Args)
+	if err := swtpmCmd.Start(); err != nil {
+		return fmt.Errorf("failed to start swtpm: %w", err)
+	}
+
+	swtpmSock := filepath.Join(l.Instance.Dir, filenames.SwtpmSock)
+	swtpmWaitCh := make(chan error, 1)
+	go func() {
+		swtpmWaitCh <- swtpmCmd.Wait()
+	}()
+
+	var swtpmSockExists bool
+	for attempt := range 5 {
+		logrus.Debugf("Waiting for swtpm socket %s (attempt %d)", swtpmSock, attempt)
+		if _, err := os.Stat(swtpmSock); err == nil {
+			swtpmSockExists = true
+			break
+		}
+		retry := time.NewTimer(200 * time.Millisecond)
+		select {
+		case err = <-swtpmWaitCh:
+			retry.Stop()
+			return fmt.Errorf("swtpm exited before creating socket: %w", err)
+		case <-retry.C:
+		}
+	}
+
+	if !swtpmSockExists {
+		_ = swtpmCmd.Process.Kill()
+		return fmt.Errorf("swtpm socket %s never appeared", swtpmSock)
+	}
+
+	l.swtpmCmd = swtpmCmd
+	go func() {
+		if err := <-swtpmWaitCh; err != nil {
+			logrus.Errorf("swtpm exited with error: %v", err)
+		} else {
+			logrus.Info("swtpm exited cleanly")
+		}
+	}()
+
+	return nil
 }
 
 func waitFileExists(path string, timeout time.Duration) error {

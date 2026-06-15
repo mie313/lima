@@ -59,8 +59,7 @@ type LimaYAML struct {
 	TimeZone             *string `yaml:"timezone,omitempty" json:"timezone,omitempty" jsonschema:"nullable"`
 	NestedVirtualization *bool   `yaml:"nestedVirtualization,omitempty" json:"nestedVirtualization,omitempty" jsonschema:"nullable"`
 	User                 User    `yaml:"user,omitempty" json:"user,omitempty"`
-	VirtioWin            *File   `yaml:"virtioWin,omitempty" json:"virtioWin,omitempty"`
-	TPM                  *bool   `yaml:"tpm,omitempty" json:"tpm,omitempty"`
+	OsOpts               OsOpts  `yaml:"osOpts,omitempty" json:"osOpts,omitempty"`
 }
 
 type BaseTemplates []LocatorWithDigest
@@ -344,6 +343,13 @@ type CACertificates struct {
 type PreConfiguredDriverPayload struct {
 	Config   LimaYAML `json:"config"`
 	FilePath string   `json:"filePath"`
+}
+
+type OsOpts map[OS]any
+
+type WindowsOpts struct {
+	VirtioWin []File `yaml:"virtioWin,omitempty" json:"virtioWin,omitempty"`
+	TPM       bool   `yaml:"tpm,omitempty" json:"tpm,omitempty"`
 }
 
 func NewOS(osname string) OS {

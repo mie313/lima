@@ -679,9 +679,14 @@ func Cmdline(ctx context.Context, cfg Config) (exe string, args []string, err er
 		args = appendArgsIfNoConflict(args, "-boot", "order=c,splash-time=0,menu=on")
 	}
 
+	var winOpts limatype.WindowsOpts
+	if err := limayaml.Convert(y.OsOpts[limatype.WINDOWS], &winOpts, "osOpts.Windows"); err != nil {
+		return "", nil, err
+	}
+
 	// virtio-win must be mounted before cidata.iso otherwise
 	// autounattend.xml can't find virtio drivers.
-	if *cfg.LimaYAML.OS == limatype.WINDOWS && cfg.LimaYAML.VirtioWin != nil {
+	if *y.OS == limatype.WINDOWS && winOpts.VirtioWin != nil {
 		args = append(args, "-drive", fmt.Sprintf("file=%s,format=raw,media=cdrom,readonly=on", filepath.Join(cfg.InstanceDir, filenames.VirtioWin)))
 	}
 
@@ -690,8 +695,10 @@ func Cmdline(ctx context.Context, cfg Config) (exe string, args []string, err er
 	}
 
 	// cloud-init
-	switch *cfg.LimaYAML.OS {
+	switch *y.OS {
 	case limatype.WINDOWS:
+		// We can't use virtio-scsi for Windows's cidata, because until autounattend in cidata installs virtio-win drivers,
+		// the VM doesn't detect virtio.
 		args = append(args, "-drive", fmt.Sprintf("file=%s,format=raw,media=cdrom,readonly=on", filepath.Join(cfg.InstanceDir, filenames.CIDataISO)))
 	default:
 		args = append(args,
@@ -701,7 +708,7 @@ func Cmdline(ctx context.Context, cfg Config) (exe string, args []string, err er
 	}
 
 	// TPM
-	if *y.TPM {
+	if *y.OS == limatype.WINDOWS && winOpts.TPM {
 		swtpmSock := filepath.Join(cfg.InstanceDir, filenames.SwtpmSock)
 		args = append(args, "-chardev", fmt.Sprintf("socket,id=chrtpm,path=%s", swtpmSock))
 		args = append(args, "-tpmdev", "emulator,id=tpm0,chardev=chrtpm")
