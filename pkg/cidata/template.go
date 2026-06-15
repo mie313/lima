@@ -211,7 +211,7 @@ func ExecuteTemplateCIDataISO(args *TemplateArgs) ([]iso9660util.Entry, error) {
 	return layout, nil
 }
 
-func ExecuteTemplateWindowsISO(args *TemplateArgs, arch limatype.Arch) ([]iso9660util.Entry, error) {
+func ExecuteTemplateWindowsISO(args *TemplateArgs) ([]iso9660util.Entry, error) {
 	fs := windowsTemplateFS
 	root := windowsTemplateFSRoot
 

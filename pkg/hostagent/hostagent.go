@@ -185,7 +185,7 @@ func New(ctx context.Context, instName string, stdout io.Writer, signalCh chan o
 	var iid string
 	switch *inst.Config.OS {
 	case limatype.WINDOWS:
-		iid, err = cidata.GenerateWindowsISO(ctx, limaDriver, inst.Dir, instName, inst.Config, udpDNSLocalPort, tcpDNSLocalPort, o.guestAgentBinary, o.nerdctlArchive, vSockPort, virtioPort, noCloudInit, rosettaEnabled, rosettaBinFmt)
+		iid, err = cidata.GenerateWindowsISO(ctx, inst.Dir, instName, inst.Config, udpDNSLocalPort, tcpDNSLocalPort, vSockPort, virtioPort, noCloudInit, rosettaEnabled, rosettaBinFmt)
 		if err != nil {
 			return nil, err
 		}
@@ -654,7 +654,7 @@ sudo chown -R "${USER}" /run/host-services`
 
 	optionalRequirements := a.optionalRequirements()
 	if *a.instConfig.OS == limatype.WINDOWS {
-		essentialRequirements = a.optionalWinRequirements()
+		optionalRequirements = a.optionalWinRequirements()
 	}
 
 	if err := a.waitForRequirements("optional", optionalRequirements); err != nil {

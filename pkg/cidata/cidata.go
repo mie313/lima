@@ -576,7 +576,7 @@ func writeCIDataDir(rootPath string, layout []iso9660util.Entry) error {
 	return nil
 }
 
-func GenerateWindowsISO(ctx context.Context, drv driver.Driver, instDir, name string, instConfig *limatype.LimaYAML, udpDNSLocalPort, tcpDNSLocalPort int, guestAgentBinary, nerdctlArchive string, vsockPort int, virtioPort string, noCloudInit, rosettaEnabled, rosettaBinFmt bool) (string, error) {
+func GenerateWindowsISO(ctx context.Context, instDir, name string, instConfig *limatype.LimaYAML, udpDNSLocalPort, tcpDNSLocalPort, vsockPort int, virtioPort string, noCloudInit, rosettaEnabled, rosettaBinFmt bool) (string, error) {
 	args, err := templateArgs(ctx, true, instDir, name, instConfig, udpDNSLocalPort, tcpDNSLocalPort, vsockPort, virtioPort, noCloudInit, rosettaEnabled, rosettaBinFmt)
 	if err != nil {
 		return "", err
@@ -586,7 +586,7 @@ func GenerateWindowsISO(ctx context.Context, drv driver.Driver, instDir, name st
 		return "", err
 	}
 
-	layout, err := ExecuteTemplateWindowsISO(args, *instConfig.Arch)
+	layout, err := ExecuteTemplateWindowsISO(args)
 	if err != nil {
 		return "", fmt.Errorf("failed to create Windows ISO entries: %w", err)
 	}

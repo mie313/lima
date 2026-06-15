@@ -1122,7 +1122,7 @@ func findSwtpm() (string, error) {
 
 func SwtpmCmdline(cfg Config) (exe string, args []string, err error) {
 	if runtime.GOOS == "windows" {
-		return "", nil, fmt.Errorf("TPM emulation through swtpm is not supported on Windows host yet as unix domain socket is required")
+		return "", nil, errors.New("TPM emulation through swtpm is not supported on Windows host yet as unix domain socket is required")
 	}
 
 	swtpmExe, err := findSwtpm()

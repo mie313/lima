@@ -5,6 +5,7 @@ package hostagent
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
@@ -189,7 +190,7 @@ func (a *HostAgent) waitForWinRequirement(r requirement) error {
 		sshArgs = append(sshArgs, "-p", strconv.Itoa(a.sshLocalPort))
 	}
 	sshArgs = append(sshArgs, a.instSSHAddress, "--", script)
-	sshCmd := exec.Command(sshBinary, sshArgs...)
+	sshCmd := exec.CommandContext(context.Background(), sshBinary, sshArgs...)
 	sshCmd.Stdin = strings.NewReader(script)
 	var stderr bytes.Buffer
 	sshCmd.Stderr = &stderr
