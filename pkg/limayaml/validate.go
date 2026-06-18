@@ -50,7 +50,14 @@ func Validate(y *limatype.LimaYAML, warn bool) error {
 	}
 
 	switch *y.OS {
-	case limatype.LINUX, limatype.DARWIN, limatype.FREEBSD, limatype.WINDOWS:
+	case limatype.LINUX, limatype.DARWIN, limatype.FREEBSD:
+	case limatype.WINDOWS:
+		if *y.VMType != limatype.QEMU {
+			errs = errors.Join(errs, fmt.Errorf("currently Windows guest is only supported on %#q; got %#q", limatype.QEMU, *y.VMType))
+		}
+		if !slices.Contains([]limatype.Arch{limatype.X8664, limatype.AARCH64}, *y.Arch) {
+			errs = errors.Join(errs, fmt.Errorf("currently Windows guest is only supported on [%#q %#q]; got %#q", limatype.X8664, limatype.AARCH64, *y.Arch))
+		}
 	default:
 		errs = errors.Join(errs, fmt.Errorf("field `os` must be one of %#q; got %#q", limatype.OSTypes, *y.OS))
 	}
@@ -418,6 +425,16 @@ func Validate(y *limatype.LimaYAML, warn bool) error {
 		}
 	}
 
+	// Validate OSOpts
+	for key := range y.OsOpts {
+		switch key {
+		case limatype.WINDOWS:
+			errs = errors.Join(errs, validateWindowsOsOpts(y))
+		default:
+			errs = errors.Join(errs, fmt.Errorf("osOpts is unsupported on OS %#q", key))
+		}
+	}
+
 	return errs
 }
 
@@ -608,6 +625,9 @@ func validatePort(field string, port int) error {
 }
 
 func warnExperimental(y *limatype.LimaYAML) {
+	if *y.OS == limatype.WINDOWS {
+		logrus.Warnf("`os: %s` is experimental", limatype.WINDOWS)
+	}
 	if *y.MountType == limatype.VIRTIOFS && runtime.GOOS == "linux" {
 		logrus.Warn("`mountType: virtiofs` on Linux is experimental")
 	}
@@ -662,6 +682,35 @@ func ValidateAgainstLatestConfig(ctx context.Context, yNew, yLatest []byte) erro
 	// Reject shrinking disk
 	if nDisk < lDisk {
 		errs = errors.Join(errs, fmt.Errorf("field `disk`: shrinking the disk (%v --> %v) is not supported", *l.Disk, *n.Disk))
+	}
+
+	return errs
+}
+
+func validateWindowsOsOpts(y *limatype.LimaYAML) error {
+	var errs error
+
+	var winOpts limatype.WindowsOpts
+	if err := Convert(y.OsOpts[limatype.WINDOWS], &winOpts, "osOpts.Windows"); err != nil {
+		return err
+	}
+
+	if !winOpts.TPM {
+		return nil
+	}
+
+	switch runtime.GOOS {
+	case "linux", "darwin":
+		// support
+	default:
+		errs = errors.Join(errs, fmt.Errorf("host os %#q does not support TPM emulation", runtime.GOOS))
+	}
+
+	switch *y.Arch {
+	case limatype.X8664, limatype.AARCH64:
+		// support
+	default:
+		errs = errors.Join(errs, fmt.Errorf("architecture %#q does not support TPM emulation", *y.Arch))
 	}
 
 	return errs
