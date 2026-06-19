@@ -239,7 +239,6 @@ func ExecuteTemplateWindowsISO(args *TemplateArgs) ([]iso9660util.Entry, error) 
 		return nil, err
 	}
 
-	args.generateWidowsInitialPassword()
 	xmlfile, err := textutil.ExecuteTemplate(string(xmlTemplate), args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render autounattend.xml: %w", err)
