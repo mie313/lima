@@ -588,7 +588,10 @@ func GenerateWindowsISO(ctx context.Context, instDir, name string, instConfig *l
 
 	// The generated password is used only for an initial setup.
 	// After that, the password is opverwritten.
-	args.generateWidowsInitialPassword()
+	err = args.generateWidowsInitialPassword()
+	if err != nil {
+		return "", err
+	}
 	layout, err := ExecuteTemplateWindowsISO(args)
 	if err != nil {
 		return "", fmt.Errorf("failed to create Windows ISO entries: %w", err)

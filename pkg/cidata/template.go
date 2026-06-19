@@ -5,13 +5,13 @@ package cidata
 
 import (
 	"bytes"
-	"crypto/rand"
 	"embed"
 	"errors"
 	"fmt"
 	"io/fs"
-	"math/big"
 	"path"
+
+	"github.com/sethvargo/go-password/password"
 
 	"github.com/lima-vm/lima/v2/pkg/identifiers"
 	"github.com/lima-vm/lima/v2/pkg/iso9660util"
@@ -127,19 +127,16 @@ type TemplateArgs struct {
 	WindowsInitialPassword          string
 }
 
-var (
-	letters               = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	windowsPasswordLength = 16
-)
-
-func (t *TemplateArgs) generateWidowsInitialPassword() {
-	p := make([]rune, windowsPasswordLength)
-	bigL := big.NewInt(int64(len(letters)))
-	for i := range windowsPasswordLength {
-		v, _ := rand.Int(rand.Reader, bigL)
-		p[i] = letters[v.Int64()]
+func (t *TemplateArgs) generateWidowsInitialPassword() error {
+	const pwLen = 16
+	// Avoid special characters to minimize potential keyboard layout issue (see )
+	pw, err := password.Generate(pwLen, pwLen/4, 0, false, false)
+	if err != nil {
+		return fmt.Errorf("failed to generate password: %w", err)
 	}
-	t.WindowsInitialPassword = string(p)
+
+	t.WindowsInitialPassword = pw
+	return nil
 }
 
 func ValidateTemplateArgs(args *TemplateArgs) error {
