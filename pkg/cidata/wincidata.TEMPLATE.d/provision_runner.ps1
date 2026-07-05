@@ -130,7 +130,49 @@ function Invoke-YQProvisionFile {
 }
 
 function Invoke-DefaultDependencyProvision {
-    Write-LimaInfo "No default dependency installer is configured for Windows yet"
+    param([string]$Root)
+
+    Write-LimaInfo "Applying default dependency provisioning for Windows guest"
+
+    Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+    Start-Service sshd
+    Set-Service -Name sshd -StartupType Automatic
+
+    Remove-NetFirewallRule -Name "OpenSSH-Server-In-TCP" -ErrorAction Ignore
+    New-NetFirewallRule -Name "OpenSSH-Server-In-TCP" -DisplayName "OpenSSH Server (sshd)" -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+
+    $pubkeyPath = Join-Path $Root "ssh_authorized_keys"
+    if (Test-Path -LiteralPath $pubkeyPath) {
+        $pubkeyLocation = "C:\ProgramData\ssh\administrators_authorized_keys"
+        $keys = Get-Content -LiteralPath $pubkeyPath
+        Set-Content -LiteralPath $pubkeyLocation -Value $keys -Encoding ASCII
+        icacls $pubkeyLocation /inheritance:r
+        icacls $pubkeyLocation /grant "SYSTEM:F"
+        icacls $pubkeyLocation /grant "Administrators:F"
+    }
+
+    if (-not (Test-Path -LiteralPath "C:\ProgramData\chocolatey\choco.exe")) {
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object System.Net.WebClient).DownloadString("https://community.chocolatey.org/install.ps1"))
+    }
+
+    & C:\ProgramData\chocolatey\choco.exe install winfsp -y --pre
+    if ($LASTEXITCODE -ne 0) {
+        throw ("failed to install WinFSP with choco (exit code {0})" -f $LASTEXITCODE)
+    }
+
+    $virtioCandidates = @(
+        "E:\viofs\2k25\amd64\virtiofs.exe",
+        "E:\viofs\w11\amd64\virtiofs.exe"
+    )
+    $virtioBinary = $virtioCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if ($virtioBinary) {
+        if (-not (Get-Service -Name "VirtioFsSvc" -ErrorAction Ignore)) {
+            New-Service -Name "VirtioFsSvc" -BinaryPathName $virtioBinary -DisplayName "VirtioFsSvc" -StartupType Automatic
+        }
+        Start-Service -Name "VirtioFsSvc" -ErrorAction Ignore
+    }
 }
 
 $baseDir = "C:\ProgramData\Lima"
@@ -168,7 +210,7 @@ try {
             Invoke-ProvisionScriptFile -File $f -Mode "dependency"
         }
         if ((Get-CIDataVar "LIMA_CIDATA_SKIP_DEFAULT_DEPENDENCY_RESOLUTION") -ne "1") {
-            Invoke-DefaultDependencyProvision
+            Invoke-DefaultDependencyProvision -Root $resolvedCIDATA
         }
         foreach ($f in (Get-ProvisionFiles -Root $resolvedCIDATA -Mode "data")) {
             Invoke-DataProvisionFile -File $f

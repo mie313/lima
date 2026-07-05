@@ -30,6 +30,12 @@ osOpts:
 
 plain: true
 
+# Provisioning scripts can be configured with `provision`.
+# They are executed via scheduled tasks:
+# - startup phase: mode `boot`, `dependency`, `data`, `yq`, `system`
+# - logon phase: mode `user`
+# NOTE: mode `yq` is currently not supported on Windows guests.
+
 video:
   # This is for development purpose. You can set `none`.
   display: default
