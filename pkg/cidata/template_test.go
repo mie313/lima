@@ -219,6 +219,8 @@ func TestExecuteTemplateWindowsISO(t *testing.T) {
 		args                        *TemplateArgs
 		expectedAutounattendStrings []string
 		expectedFirstLogonStrings   []string
+		expectedInstallScheduler    []string
+		expectedLimaEnv             []string
 	}{
 		{
 			name: "windows server 2025",
@@ -240,6 +242,13 @@ func TestExecuteTemplateWindowsISO(t *testing.T) {
 			expectedFirstLogonStrings: []string{
 				`$logfile = "C:\Users\windows-user\lima-setup.log"`,
 			},
+			expectedInstallScheduler: []string{
+				`New-ScheduledTaskTrigger -AtLogOn -User "windows-user"`,
+			},
+			expectedLimaEnv: []string{
+				`LIMA_CIDATA_IID=`,
+				`LIMA_CIDATA_USER=windows-user`,
+			},
 		},
 		{
 			name: "windows 11 x86_64",
@@ -259,6 +268,13 @@ func TestExecuteTemplateWindowsISO(t *testing.T) {
 			},
 			expectedFirstLogonStrings: []string{
 				`$logfile = "C:\Users\windows-user\lima-setup.log"`,
+			},
+			expectedInstallScheduler: []string{
+				`New-ScheduledTaskTrigger -AtLogOn -User "windows-user"`,
+			},
+			expectedLimaEnv: []string{
+				`LIMA_CIDATA_IID=`,
+				`LIMA_CIDATA_USER=windows-user`,
 			},
 		},
 		{
@@ -281,6 +297,13 @@ func TestExecuteTemplateWindowsISO(t *testing.T) {
 			},
 			expectedFirstLogonStrings: []string{
 				`$logfile = "C:\Users\windows-user\lima-setup.log"`,
+			},
+			expectedInstallScheduler: []string{
+				`New-ScheduledTaskTrigger -AtLogOn -User "windows-user"`,
+			},
+			expectedLimaEnv: []string{
+				`LIMA_CIDATA_IID=`,
+				`LIMA_CIDATA_USER=windows-user`,
 			},
 		},
 		{
@@ -324,6 +347,13 @@ func TestExecuteTemplateWindowsISO(t *testing.T) {
 			expectedFirstLogonStrings: []string{
 				`$logfile = "C:\Users\windows-user\lima-setup.log"`,
 			},
+			expectedInstallScheduler: []string{
+				`New-ScheduledTaskTrigger -AtLogOn -User "windows-user"`,
+			},
+			expectedLimaEnv: []string{
+				`LIMA_CIDATA_IID=`,
+				`LIMA_CIDATA_USER=windows-user`,
+			},
 		},
 	}
 
@@ -342,6 +372,14 @@ func TestExecuteTemplateWindowsISO(t *testing.T) {
 					}
 				case "first_logon.ps1":
 					for _, expected := range tt.expectedFirstLogonStrings {
+						assert.Assert(t, strings.Contains(s, expected), fmt.Sprintf("expected: %s", expected))
+					}
+				case "install_scheduler.ps1":
+					for _, expected := range tt.expectedInstallScheduler {
+						assert.Assert(t, strings.Contains(s, expected), fmt.Sprintf("expected: %s", expected))
+					}
+				case "lima.env":
+					for _, expected := range tt.expectedLimaEnv {
 						assert.Assert(t, strings.Contains(s, expected), fmt.Sprintf("expected: %s", expected))
 					}
 				}

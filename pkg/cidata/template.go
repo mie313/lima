@@ -251,41 +251,41 @@ func ExecuteTemplateCIDataISO(args *TemplateArgs) ([]iso9660util.Entry, error) {
 }
 
 func ExecuteTemplateWindowsISO(args *TemplateArgs) ([]iso9660util.Entry, error) {
-	fs := windowsTemplateFS
+	templateFS := windowsTemplateFS
 	root := windowsTemplateFSRoot
 
-	// Execute template for autounattend.xml
-	xmlTemplate, err := fs.ReadFile(path.Join(root, "autounattend.xml"))
+	fsys, err := fs.Sub(templateFS, root)
 	if err != nil {
 		return nil, err
 	}
 
-	xmlfile, err := textutil.ExecuteTemplate(string(xmlTemplate), args)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render autounattend.xml: %w", err)
+	var layout []iso9660util.Entry
+	walkFn := func(filePath string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if !d.Type().IsRegular() {
+			return fmt.Errorf("got non-regular file %#q", filePath)
+		}
+		templateB, err := fs.ReadFile(fsys, filePath)
+		if err != nil {
+			return err
+		}
+		b, err := textutil.ExecuteTemplate(string(templateB), args)
+		if err != nil {
+			return fmt.Errorf("failed to render %#q: %w", filePath, err)
+		}
+		layout = append(layout, iso9660util.Entry{
+			Path:   filePath,
+			Reader: bytes.NewReader(b),
+		})
+		return nil
 	}
-
-	// Execute template for powershell script file
-	ps1Template, err := fs.ReadFile(path.Join(root, "first_logon.ps1"))
-	if err != nil {
+	if err := fs.WalkDir(fsys, ".", walkFn); err != nil {
 		return nil, err
 	}
-
-	ps1file, err := textutil.ExecuteTemplate(string(ps1Template), args)
-	if err != nil {
-		return nil, fmt.Errorf("failed to render ps1 file: %w", err)
-	}
-
-	layout := []iso9660util.Entry{
-		{
-			Path:   "autounattend.xml",
-			Reader: bytes.NewReader(xmlfile),
-		},
-		{
-			Path:   "first_logon.ps1",
-			Reader: bytes.NewReader(ps1file),
-		},
-	}
-
 	return layout, nil
 }

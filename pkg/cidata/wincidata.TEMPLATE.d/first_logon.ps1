@@ -50,5 +50,14 @@ C:\ProgramData\chocolatey\choco.exe install winfsp -y --pre
 New-Service -Name VirtioFsSvc -BinaryPathName 'E:\viofs\2k25\amd64\virtiofs.exe' -DisplayName VirtioFsSvc -StartupType Automatic
 Start-Service -Name VirtioFsSvc
 
+# Install per-boot provision runner and task scheduler entries.
+$cidataRoot = Split-Path -Path $PSScriptRoot -Qualifier
+powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$cidataRoot\install_scheduler.ps1" -CIDATARoot "$cidataRoot\"
+
+# Execute provision phases for the current boot so scripts don't have to wait for the next reboot.
+$runnerPath = "C:\ProgramData\Lima\provision\runner.ps1"
+powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$runnerPath" -Phase startup -CIDATARoot "$cidataRoot\"
+powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$runnerPath" -Phase user -CIDATARoot "$cidataRoot\"
+
 # Finish recording logs
 Stop-Transcript
