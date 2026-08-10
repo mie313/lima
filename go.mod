@@ -18,7 +18,7 @@ require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Code-Hex/vz/v3 v3.7.1 // gomodjail:unconfined
-	github.com/Microsoft/go-winio v0.6.2 // gomodjail:unconfined
+	github.com/Microsoft/go-winio v0.6.3-0.20251027160822-ad3df93bed29 // gomodjail:unconfined
 	github.com/apparentlymart/go-cidr v1.1.1
 	github.com/balajiv113/fd v0.0.0-20230330094840-143eec500f3e
 	github.com/cheggaaa/pb/v3 v3.2.0 // gomodjail:unconfined
@@ -101,7 +101,7 @@ require (
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kr/fs v0.1.0 // indirect
-	github.com/linuxkit/virtsock v0.0.0-20220523201153-1a23e78aa7a2 // indirect
+	github.com/linuxkit/virtsock v0.0.0-20241009230534-cb6a20cc0422 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect
@@ -114,7 +114,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
-	github.com/segmentio/asm v1.1.3 // indirect
+	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
 	// gomodjail:unconfined
 	github.com/u-root/uio v0.0.0-20240224005618-d2acac8f3701 // indirect
@@ -130,3 +130,16 @@ require (
 )
 
 require github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
+
+require github.com/Microsoft/hcsshim v0.14.1
+
+require (
+	github.com/containerd/cgroups/v3 v3.1.3 // indirect
+	github.com/containerd/errdefs v1.0.0 // indirect
+	github.com/containerd/errdefs/pkg v0.3.0 // indirect
+	github.com/containerd/typeurl/v2 v2.3.0 // indirect
+	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
+	go.opencensus.io v0.24.0 // indirect
+)
+
+replace github.com/Microsoft/hcsshim => github.com/AkihiroSuda/hcsshim v0.0.0-20260714172934-dc466dcf888f

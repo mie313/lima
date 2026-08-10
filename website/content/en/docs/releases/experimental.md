@@ -20,6 +20,7 @@ The following features are experimental and subject to change:
 - [macOS guests](../usage/guests/macos.md)
 - [FreeBSD guests](../usage/guests/freebsd.md)
 - [Windows guests](../usage/guests/windows.md)
+- [`vmType:hcs`]((../config/vmtype/hcs.md))
 
 The following commands are experimental and subject to change:
 

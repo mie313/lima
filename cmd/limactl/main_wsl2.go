@@ -1,4 +1,4 @@
-//go:build !external_wsl2
+//go:build windows && !external_wsl2
 
 // SPDX-FileCopyrightText: Copyright The Lima Authors
 // SPDX-License-Identifier: Apache-2.0
