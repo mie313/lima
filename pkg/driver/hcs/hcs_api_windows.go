@@ -44,8 +44,6 @@ type (
 	hcsSystem    syscall.Handle
 )
 
-const infiniteTimeout = 0xFFFFFFFF
-
 // hresultErr converts an HRESULT return value into a Go error, unwrapping
 // FACILITY_WIN32 the same way hcsshim's generated bindings do.
 func hresultErr(r0 uintptr) error {
