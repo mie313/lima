@@ -6,7 +6,7 @@ weight: 5
 > **Warning**
 > "hcs" mode is experimental
 
-| ⚡ Requirement | Lima >= TBD + (Windows >= Windows 10 OR Windows Server 2019) |
+| ⚡ Requirement | Lima >= 2.3 + (Windows >= Windows 10 OR Windows Server 2019) |
 | ----------------- | -------------------------------------------------------- |
 
 "hcs" option makes use of native virtualization support provided by Windows' Host Compute System (HCS) API ([more info](https://learn.microsoft.com/en-us/virtualization/api/hcs/overview)).
@@ -27,7 +27,8 @@ images:
   arch: "x86_64"
   digest: "sha256:117816726abbdefc5ef3e38902e81a76f1c76c3610e709999d0885f9d5d9b477"
 plain: true
-dns: - 8.8.8.8
+dns: 
+- 8.8.8.8
 ```
 {{% /tab %}}
 {{< /tabpane >}}
