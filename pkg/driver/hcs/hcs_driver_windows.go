@@ -14,7 +14,6 @@ import (
 
 	"github.com/Microsoft/go-winio"
 	"github.com/Microsoft/hcsshim/hcn"
-	"github.com/Microsoft/hcsshim/pkg/computecore"
 	"github.com/docker/go-units"
 	"github.com/lima-vm/go-qcow2reader/image/vhdx"
 	"github.com/sirupsen/logrus"
@@ -77,7 +76,7 @@ type LimaHcsDriver struct {
 	vSockPort    int
 	virtioPort   string
 
-	system         computecore.HcsSystem
+	system         hcsSystem
 	serialListener net.Listener
 	sshAddress     string
 }
@@ -248,7 +247,7 @@ func (l *LimaHcsDriver) Start(ctx context.Context) (chan error, error) {
 
 	vmID := "lima-" + inst.Name
 	for _, p := range []string{diskPath, isoPath} {
-		if err := computecore.HcsGrantVMAccess(ctx, vmID, p); err != nil {
+		if err := hcsGrantVmAccess(vmID, p); err != nil {
 			return nil, fmt.Errorf("failed to grant VM access to %#q: %w", p, err)
 		}
 	}
@@ -293,7 +292,7 @@ func (l *LimaHcsDriver) Start(ctx context.Context) (chan error, error) {
 
 	errCh := make(chan error, 1)
 	go func() {
-		result, waitErr := computecore.HcsWaitForComputeSystemExit(ctx, system, hcsTimeoutInfinite)
+		result, waitErr := hcsWaitForComputeSystemExit(ctx, system, hcsTimeoutInfinite)
 		if waitErr != nil {
 			errCh <- fmt.Errorf("HCS compute system exited: %w (result=%s)", waitErr, result)
 			return
@@ -311,11 +310,8 @@ func (l *LimaHcsDriver) Stop(ctx context.Context) error {
 	if l.system == 0 {
 		return nil
 	}
-	if err := shutdownComputeSystem(ctx, l.system); err != nil {
-		logrus.WithError(err).Warn("graceful shutdown failed, terminating the compute system")
-		if err := terminateComputeSystem(ctx, l.system); err != nil {
-			return err
-		}
+	if err := terminateComputeSystem(ctx, l.system); err != nil {
+		return err
 	}
 	if l.serialListener != nil {
 		_ = l.serialListener.Close()

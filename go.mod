@@ -141,5 +141,3 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	go.opencensus.io v0.24.0 // indirect
 )
-
-replace github.com/Microsoft/hcsshim => github.com/AkihiroSuda/hcsshim v0.0.0-20260714172934-dc466dcf888f

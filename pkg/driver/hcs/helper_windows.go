@@ -18,7 +18,6 @@ import (
 	"syscall"
 
 	"github.com/Microsoft/hcsshim/hcn"
-	"github.com/Microsoft/hcsshim/pkg/computecore"
 	"github.com/lima-vm/go-qcow2reader/image/qcow2"
 	"github.com/lima-vm/go-qcow2reader/image/vhdx"
 	"github.com/sirupsen/logrus"
@@ -49,23 +48,23 @@ var errNotFound = errors.New("not found")
 
 // getComputeSystemState obtains compute system properties.
 func getComputeSystemState(ctx context.Context, id string) (string, error) {
-	system, err := computecore.HcsOpenComputeSystem(ctx, id, syscall.GENERIC_ALL)
+	system, err := hcsOpenComputeSystem(ctx, id, syscall.GENERIC_ALL)
 	if err != nil {
 		return "", errNotFound
 	}
-	defer computecore.HcsCloseComputeSystem(ctx, system)
+	defer hcsCloseComputeSystem(system)
 
-	op, err := computecore.HcsCreateOperation(ctx, 0, 0)
+	op, err := hcsCreateOperation()
 	if err != nil {
 		return "", fmt.Errorf("failed to create an HCS operation: %w", err)
 	}
-	defer computecore.HcsCloseOperation(ctx, op)
+	defer hcsCloseOperation(op)
 
-	if err := computecore.HcsGetComputeSystemProperties(ctx, system, op, "{}"); err != nil {
+	if err := hcsGetComputeSystemProperties(ctx, system, op, "{}"); err != nil {
 		return "", fmt.Errorf("failed to get compute system properties: %w", err)
 	}
 
-	result, err := computecore.HcsWaitForOperationResult(ctx, op, hcsTimeoutInfinite)
+	result, err := hcsWait(op, "hcsGetComputeSystemProperties", nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to get compute system properties: %w (result=%s)", err, result)
 	}
@@ -217,63 +216,22 @@ func hnsMACAddress(instDir string) string {
 	return strings.ToUpper(strings.ReplaceAll(limayaml.MACAddress(instDir), ":", "-"))
 }
 
-// withOperation creates an HCS operation, invokes start (which kicks off an
-// asynchronous HCS call), and blocks until the operation completes.
-func withOperation(ctx context.Context, what string, start func(op computecore.HcsOperation) error) error {
-	op, err := computecore.HcsCreateOperation(ctx, 0, 0)
-	if err != nil {
-		return fmt.Errorf("%s: failed to create an HCS operation: %w", what, err)
-	}
-	defer computecore.HcsCloseOperation(ctx, op)
-
-	if err := start(op); err != nil {
-		return fmt.Errorf("%s: %w", what, err)
-	}
-	result, err := computecore.HcsWaitForOperationResult(ctx, op, hcsTimeoutInfinite)
-	if err != nil {
-		return fmt.Errorf("%s: %w (result=%s)", what, err, result)
-	}
-
-	return nil
-}
-
 // createComputeSystem creates (but does not start) an HCS compute system.
-func createComputeSystem(ctx context.Context, id, config string) (computecore.HcsSystem, error) {
-	op, err := computecore.HcsCreateOperation(ctx, 0, 0)
+func createComputeSystem(_ context.Context, id, config string) (hcsSystem, error) {
+	system, err := hcsCreateComputeSystem(id, config)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create an HCS operation: %w", err)
-	}
-	defer computecore.HcsCloseOperation(ctx, op)
-
-	system, err := computecore.HcsCreateComputeSystem(ctx, id, config, op, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	result, err := computecore.HcsWaitForOperationResult(ctx, op, hcsTimeoutInfinite)
-	if err != nil {
-		return 0, fmt.Errorf("create compute system error: %w (result=%s)", err, result)
+		return 0, fmt.Errorf("create compute system error: %w", err)
 	}
 
 	return system, nil
 }
 
-func startComputeSystem(ctx context.Context, system computecore.HcsSystem) error {
-	return withOperation(ctx, "failed to start the compute system", func(op computecore.HcsOperation) error {
-		return computecore.HcsStartComputeSystem(ctx, system, op, "")
-	})
+func startComputeSystem(_ context.Context, system hcsSystem) error {
+	return hcsStartComputeSystem(system)
 }
 
-func shutdownComputeSystem(ctx context.Context, system computecore.HcsSystem) error {
-	return withOperation(ctx, "failed to shut down the compute system", func(op computecore.HcsOperation) error {
-		return computecore.HcsShutDownComputeSystem(ctx, system, op, "")
-	})
-}
-
-func terminateComputeSystem(ctx context.Context, system computecore.HcsSystem) error {
-	return withOperation(ctx, "failed to terminate the compute system", func(op computecore.HcsOperation) error {
-		return computecore.HcsTerminateComputeSystem(ctx, system, op, "")
-	})
+func terminateComputeSystem(_ context.Context, system hcsSystem) error {
+	return hcsTerminateComputeSystem(system)
 }
 
 // serveSerial accepts connections from the guest port.
